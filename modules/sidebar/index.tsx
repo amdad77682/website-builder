@@ -2,6 +2,13 @@
 import { Dropdown, Input, Menu, message, Modal } from 'antd';
 import { ChevronLeft, LayoutList, MoreVertical, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import {
+  getPages,
+  getPage,
+  createPage,
+  updatePage,
+  deletePage,
+} from '@/services/pageService';
 interface SidebarProps {}
 
 const Sidebar: React.FC<SidebarProps> = () => {
@@ -12,6 +19,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
   );
   const [renamePageName, setRenamePageName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletePageId, setDeletePageId] = useState<string | number | null>(
+    null
+  );
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newPageName, setNewPageName] = useState('');
 
@@ -20,8 +31,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
     async function fetchPages() {
       setLoading(true);
       try {
-        const res = await fetch('/api/pages');
-        const data = await res.json();
+        const data = await getPages();
         setPages(Array.isArray(data) ? data : []);
       } catch (err) {
         message.error('Failed to load pages');
@@ -33,93 +43,23 @@ const Sidebar: React.FC<SidebarProps> = () => {
 
   // Add new page
   const handleAddPage = async () => {
-    // Rename page
-    const handleRenamePage = async () => {
-      if (!renamePageName.trim() || !renamePageId) {
-        message.error('Page name required');
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/pages/${renamePageId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: renamePageName }),
-        });
-        if (res.ok) {
-          message.success('Page renamed');
-          setRenameModalOpen(false);
-          setRenamePageId(null);
-          setRenamePageName('');
-          // Refresh pages
-          const updated = await res.json();
-          setPages(pages =>
-            pages.map(p => (p.id === updated.id ? updated : p))
-          );
-        } else {
-          const err = await res.json();
-          message.error(err.error || 'Failed to rename page');
-        }
-      } catch (err) {
-        message.error('Failed to rename page');
-      }
-      setLoading(false);
-    };
-
-    // Delete page
-    const handleDeletePage = async (id: string | number) => {
-      Modal.confirm({
-        title: 'Delete Page',
-        content: 'Are you sure you want to delete this page?',
-        okText: 'Delete',
-        okType: 'danger',
-        cancelText: 'Cancel',
-        async onOk() {
-          setLoading(true);
-          try {
-            const res = await fetch(`/api/pages/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-              message.success('Page deleted');
-              setPages(pages => pages.filter(p => p.id !== id));
-            } else {
-              const err = await res.json();
-              message.error(err.error || 'Failed to delete page');
-            }
-          } catch (err) {
-            message.error('Failed to delete page');
-          }
-          setLoading(false);
-        },
-      });
-    };
     if (!newPageName.trim()) {
       message.error('Page name required');
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/pages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newPageName,
-          slug: newPageName.toLowerCase().replace(/\s+/g, '-'),
-          site_id: 1,
-        }),
+      const data = await createPage({
+        title: newPageName,
+        slug: newPageName.toLowerCase().replace(/\s+/g, '-'),
+        site_id: 1,
       });
-      if (res.ok) {
-        message.success('Page added');
-        setNewPageName('');
-        setAddModalOpen(false);
-        // Refresh pages
-        const data = await res.json();
-        setPages(prev => [...prev, data]);
-      } else {
-        const err = await res.json();
-        message.error(err.error || 'Failed to add page');
-      }
-    } catch (err) {
-      message.error('Failed to add page');
+      message.success('Page added');
+      setNewPageName('');
+      setAddModalOpen(false);
+      setPages(prev => [...prev, data]);
+    } catch (err: any) {
+      message.error(err?.response?.data?.error || 'Failed to add page');
     }
     setLoading(false);
   };
@@ -132,54 +72,37 @@ const Sidebar: React.FC<SidebarProps> = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/pages/${renamePageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: renamePageName }),
-      });
-      if (res.ok) {
-        message.success('Page renamed');
-        setRenameModalOpen(false);
-        setRenamePageId(null);
-        setRenamePageName('');
-        // Refresh pages
-        const updated = await res.json();
-        setPages(pages => pages.map(p => (p.id === updated.id ? updated : p)));
-      } else {
-        const err = await res.json();
-        message.error(err.error || 'Failed to rename page');
-      }
-    } catch (err) {
-      message.error('Failed to rename page');
+      const updated = await updatePage(renamePageId, { title: renamePageName });
+      message.success('Page renamed');
+      setRenameModalOpen(false);
+      setRenamePageId(null);
+      setRenamePageName('');
+      setPages(pages => pages.map(p => (p.id === updated.id ? updated : p)));
+    } catch (err: any) {
+      message.error(err?.response?.data?.error || 'Failed to rename page');
     }
     setLoading(false);
   };
 
   // Delete page
-  const handleDeletePage = async (id: string | number) => {
-    Modal.confirm({
-      title: 'Delete Page',
-      content: 'Are you sure you want to delete this page?',
-      okText: 'Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
-      async onOk() {
-        setLoading(true);
-        try {
-          const res = await fetch(`/api/pages/${id}`, { method: 'DELETE' });
-          if (res.ok) {
-            message.success('Page deleted');
-            setPages(pages => pages.filter(p => p.id !== id));
-          } else {
-            const err = await res.json();
-            message.error(err.error || 'Failed to delete page');
-          }
-        } catch (err) {
-          message.error('Failed to delete page');
-        }
-        setLoading(false);
-      },
-    });
+  const handleDeletePage = (id: string | number) => {
+    setDeletePageId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeletePage = async () => {
+    if (!deletePageId) return;
+    setLoading(true);
+    try {
+      await deletePage(deletePageId);
+      message.success('Page deleted');
+      setPages(pages => pages.filter(p => p.id !== deletePageId));
+      setDeleteModalOpen(false);
+      setDeletePageId(null);
+    } catch (err: any) {
+      message.error(err?.response?.data?.error || 'Failed to delete page');
+    }
+    setLoading(false);
   };
 
   // Menu items for Website Design
@@ -284,6 +207,20 @@ const Sidebar: React.FC<SidebarProps> = () => {
             onChange={e => setNewPageName(e.target.value)}
             onPressEnter={handleAddPage}
           />
+        </Modal>
+        {/* Delete Page Modal */}
+        <Modal
+          title="Delete Page"
+          open={deleteModalOpen}
+          onOk={confirmDeletePage}
+          onCancel={() => setDeleteModalOpen(false)}
+          okText="Delete"
+          okButtonProps={{
+            style: { background: '#181818', color: '#fff', border: 'none' },
+          }}
+          confirmLoading={loading}
+        >
+          <span>Are you sure you want to delete this page?</span>
         </Modal>
         {/* Rename Page Modal */}
         <Modal
