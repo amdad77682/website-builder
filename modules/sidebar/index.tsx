@@ -1,6 +1,13 @@
 'use client';
 import { Dropdown, Input, Menu, message, Modal } from 'antd';
-import { ChevronLeft, LayoutList, MoreVertical, Plus } from 'lucide-react';
+import {
+  CaseSensitive,
+  ChevronLeft,
+  LayoutList,
+  MoreVertical,
+  Pencil,
+  Plus,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   getPages,
@@ -9,6 +16,12 @@ import {
   updatePage,
   deletePage,
 } from '@/services/pageService';
+import {
+  createHeader,
+  getHeader,
+  getHeaders,
+  updateHeader,
+} from '@/services/headerService';
 interface SidebarProps {}
 
 const Sidebar: React.FC<SidebarProps> = () => {
@@ -25,6 +38,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
   );
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newPageName, setNewPageName] = useState('');
+  const [headerDisplayName, setHeaderDisplayName] = useState('');
+  const [headerItems, setHeaderItems] = useState<any[]>([]);
+  const [headerFontColor, setHeaderFontColor] = useState('#FFFFFF');
+  const [headerBackgroundColor, setHeaderBackgroundColor] = useState('#000000');
 
   // Fetch pages from API
   useEffect(() => {
@@ -39,6 +56,19 @@ const Sidebar: React.FC<SidebarProps> = () => {
       setLoading(false);
     }
     fetchPages();
+  }, []);
+  useEffect(() => {
+    async function fetchHeader() {
+      setLoading(true);
+      try {
+        const data = await getHeaders();
+        setHeaderItems(data);
+      } catch (err) {
+        message.error('Failed to load pages');
+      }
+      setLoading(false);
+    }
+    fetchHeader();
   }, []);
 
   // Add new page
@@ -72,7 +102,9 @@ const Sidebar: React.FC<SidebarProps> = () => {
     }
     setLoading(true);
     try {
-      const updated = await updatePage(renamePageId, { title: renamePageName });
+      const updated = await updatePage(renamePageId, {
+        title: renamePageName,
+      });
       message.success('Page renamed');
       setRenameModalOpen(false);
       setRenamePageId(null);
@@ -103,6 +135,38 @@ const Sidebar: React.FC<SidebarProps> = () => {
       message.error(err?.response?.data?.error || 'Failed to delete page');
     }
     setLoading(false);
+  };
+  console.log(headerItems);
+
+  // Update header style
+  const handleUpdateHeaderStyle = async () => {
+    try {
+      if (headerItems.length === 0) {
+        const response = await createHeader({
+          site_id: 1,
+          displayed_name: headerDisplayName,
+          font_color: headerFontColor,
+          backdrop_color: headerBackgroundColor,
+          items: headerItems,
+        });
+      }
+
+      const response = await updateHeader(headerItems[0].id, {
+        site_id: 1,
+        displayed_name: headerDisplayName,
+        font_color: headerFontColor,
+        backdrop_color: headerBackgroundColor,
+        items: [],
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update header style');
+      }
+
+      await response.json();
+    } catch (err: any) {
+      message.error(err.message || 'Failed to update header style');
+    }
   };
 
   // Menu items for Website Design
@@ -153,6 +217,100 @@ const Sidebar: React.FC<SidebarProps> = () => {
           </div>
         ),
       })),
+    },
+    {
+      key: 'header-menu',
+      icon: <LayoutList size={18} />,
+      label: 'Header/Menu',
+      children: [
+        {
+          key: 'header-display-name',
+          label: (
+            <div className="space-y-1">
+              <label className="flex items-center text-sm gap-2 text-gray-300">
+                <Pencil size={12} />
+                Displayed name
+              </label>
+            </div>
+          ),
+        },
+        {
+          key: 'header-background-color',
+          label: (
+            <Input
+              placeholder="Name"
+              value={headerDisplayName}
+              onChange={e => {
+                setHeaderDisplayName(e.target.value);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  handleUpdateHeaderStyle();
+                }
+              }}
+              className="bg-[#FFFFFF33]! border-none! text-white! placeholder:text-white!"
+            />
+          ),
+        },
+        {
+          key: 'header-font-color',
+          label: (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center text-sm gap-2 text-gray-300">
+                <CaseSensitive size={12} />
+                <span className="text-xs">Font Color</span>
+
+                <Input
+                  type="color"
+                  value={headerFontColor}
+                  onChange={e => {
+                    setHeaderFontColor(e.target.value);
+                    handleUpdateHeaderStyle();
+                  }}
+                  className="color-picker"
+                />
+              </div>
+            </div>
+          ),
+        },
+        {
+          key: 'header-backdrop-color',
+          label: (
+            <div className="space-y-1">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center text-sm gap-2 text-gray-300">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M0.371094 2.59407L2.59456 0.370605M5.92976 0.370605L0.371094 5.92927M0.371094 9.26447L9.26496 0.370605M9.26496 3.7058L3.70629 9.26447M9.26496 7.041L7.04149 9.26447"
+                      stroke="#DFDFDF"
+                      strokeWidth="0.741155"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span className="text-xs">Backdrop Color</span>
+
+                  <Input
+                    type="color"
+                    value={headerBackgroundColor}
+                    onChange={e => {
+                      setHeaderBackgroundColor(e.target.value);
+                      handleUpdateHeaderStyle();
+                    }}
+                    className="color-picker"
+                  />
+                </div>
+              </div>
+            </div>
+          ),
+        },
+      ],
     },
   ];
 
