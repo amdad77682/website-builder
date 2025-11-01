@@ -189,7 +189,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
       children: pages.map(page => ({
         key: page.id || page.title,
         label: (
-          <div className="flex items-center justify-between w-full">
+          <div
+            className="flex items-center justify-between w-full"
+            onClick={() => (window.location.href = `/page/${page.id}`)} // Redirect to page
+          >
             <span>{page.title}</span>
             <Dropdown
               trigger={['click']}

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json(
@@ -44,7 +44,7 @@ export async function PUT(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } = await params;
   const body = await request.json();
   const { site_id, displayed_name, font_color, backdrop_color, items } = body;
 
@@ -93,7 +93,7 @@ export async function PATCH(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } = await params;
   const body = await request.json();
 
   if (!id) {
