@@ -5,6 +5,9 @@ import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import useSWR from 'swr';
 import TextBlock from './TextBlock';
+import VideoBlock from './VideoBlock';
+import SplitView from './SplitView';
+import Gallery from './Gallary';
 interface BlocksProps {}
 
 const Blocks: React.FC<BlocksProps> = () => {
@@ -29,30 +32,21 @@ const Blocks: React.FC<BlocksProps> = () => {
     return <div>No blocks available.</div>;
   }
   return (
-    <div>
+    <>
       {blocks?.map((block: any, index: number) => (
-        <div key={index} className="p-4 mb-4 border rounded">
+        <div key={index} className="p-4 mb-4 ">
           {/* Render block content based on type */}
           {(() => {
             switch (block.type) {
               case 'text':
                 return <TextBlock content={block.config?.content} />;
-              case 'image':
-                return (
-                  <img
-                    src={block.config?.content?.url}
-                    alt="Block Image"
-                    className="max-w-full"
-                  />
-                );
+
               case 'video':
-                return (
-                  <video
-                    src={block.config?.content?.url}
-                    controls
-                    className="max-w-full"
-                  />
-                );
+                return <VideoBlock content={block.config?.content} />;
+              case 'gallery':
+                return <Gallery content={block.config?.content} />;
+              case 'split':
+                return <SplitView content={block.config?.content} />;
               // Add more cases as needed
               default:
                 return <div>Unknown block type: {block.type}</div>;
@@ -60,7 +54,7 @@ const Blocks: React.FC<BlocksProps> = () => {
           })()}
         </div>
       ))}
-    </div>
+    </>
   );
 };
 
