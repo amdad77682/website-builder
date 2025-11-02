@@ -136,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
     }
     setLoading(false);
   };
-  console.log(headerItems);
+
 
   // Update header style
   const handleUpdateHeaderStyle = async () => {

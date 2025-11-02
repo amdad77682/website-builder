@@ -11,7 +11,14 @@ export async function GET(request: Request) {
   let query = supabase.from('blocks').select('*');
 
   if (page_id) {
-    query = query.eq('page_id', page_id);
+    query = query
+      .eq('page_id', page_id)
+      .order('order_index', { ascending: true }); // Order by index for GET
+  } else {
+    // If no page_id, still order for consistency if fetching all blocks
+    query = query
+      .order('page_id', { ascending: true })
+      .order('order_index', { ascending: true });
   }
 
   const { data, error } = await query;
@@ -23,12 +30,12 @@ export async function GET(request: Request) {
   return NextResponse.json(data);
 }
 
-// POST /api/page-blocks - Create a new block
+// POST /api/page-blocks - Create a new block with incremental order_index
 export async function POST(request: Request) {
   const supabase = createSupabaseServiceRoleClient();
 
   const body = await request.json();
-  const { page_id, type, config, order_index } = body;
+  const { page_id, type, config } = body; // order_index is no longer passed by client
 
   if (!page_id || !type) {
     return NextResponse.json(
@@ -37,9 +44,40 @@ export async function POST(request: Request) {
     );
   }
 
+  // --- Start of new logic for incremental order_index ---
+
+  // 1. Find the current maximum order_index for this page_id
+  const { data: maxOrderData, error: maxOrderError } = await supabase
+    .from('blocks')
+    .select('order_index')
+    .eq('page_id', page_id)
+    .order('order_index', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (maxOrderError && maxOrderError.code !== 'PGRST116') {
+    // PGRST116 means "no rows found" - which is fine
+    console.error('Error fetching max order_index:', maxOrderError);
+    return NextResponse.json(
+      { error: 'Failed to determine block order' },
+      { status: 500 }
+    );
+  }
+
+  const newOrderIndex = (maxOrderData?.order_index || -1) + 1;
+  // If no blocks exist for this page_id, maxOrderData will be null, and newOrderIndex will be 0.
+  // If blocks exist, it will be max + 1.
+
+  // --- End of new logic ---
+
   const { data, error } = await supabase
     .from('blocks')
-    .insert({ page_id, type, config, order_index })
+    .insert({
+      page_id,
+      type,
+      config,
+      order_index: newOrderIndex, // Use the calculated order_index
+    })
     .select();
 
   if (error) {
@@ -49,7 +87,7 @@ export async function POST(request: Request) {
   return NextResponse.json(data ? data[0] : null, { status: 201 });
 }
 
-// You can explicitly disallow other methods
+// Disallow other methods
 export async function PUT() {
   return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });
 }

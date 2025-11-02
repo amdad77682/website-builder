@@ -4,10 +4,12 @@ import { createBlocks } from '@/services/blocksService';
 import { useBlockStore } from '@/store/blocks';
 import { Popover } from 'antd';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
 interface AddBlocksProps {}
 
 const AddBlocks: React.FC<AddBlocksProps> = () => {
+  const [openPopover, setOpenPopover] = useState(false);
   const params = useParams();
   const { addBlock } = useBlockStore();
   const content = (
@@ -40,10 +42,9 @@ const AddBlocks: React.FC<AddBlocksProps> = () => {
       };
       const response = await createBlocks(reqBody);
       if (response) {
-        console.log(response);
-
-        const newBlock = await response?.data;
+        const newBlock = await response;
         addBlock(newBlock);
+        setOpenPopover(false);
       } else {
         console.error('Failed to add block');
       }
@@ -54,8 +55,11 @@ const AddBlocks: React.FC<AddBlocksProps> = () => {
 
   return (
     <div className="flex justify-center gap-4 py-6 bg-white">
-      <Popover content={content} trigger="click">
-        <button className="bg-gray-800 text-white rounded-full px-6 py-2">
+      <Popover open={openPopover} content={content} trigger="click">
+        <button
+          onClick={() => setOpenPopover(true)}
+          className="bg-gray-800 text-white rounded-full px-6 py-2"
+        >
           + Add Block
         </button>
       </Popover>

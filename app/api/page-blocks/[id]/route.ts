@@ -121,7 +121,7 @@ export async function DELETE(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json(

@@ -28,7 +28,7 @@ export const DESIGNS = [
 
   {
     type: 'split',
-    name: 'Split View ',
+    name: 'Split View',
     icon: <SquareSplitHorizontal />,
     layout: 'split',
     content: {

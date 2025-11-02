@@ -1,4 +1,5 @@
 import { Input } from 'antd';
+import MinimalArticleEditor from './common/ArticleEditor';
 
 interface TextBlockProps {
   content: any;
@@ -7,11 +8,7 @@ interface TextBlockProps {
 const TextBlock: React.FC<TextBlockProps> = ({ content }) => {
   return (
     <div>
-      <Input.TextArea
-        rows={4}
-        placeholder={content?.text}
-        className="bg-transparent! border-none focus:ring-0 focus:outline-none!"
-      />
+      <MinimalArticleEditor placeholder={content?.text} />
     </div>
   );
 };
