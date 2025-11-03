@@ -1,14 +1,34 @@
+'use client';
+import { getPages } from '@/services/pageService';
+import { useHeaderStore } from '@/store/header';
+import useSWR from 'swr';
+
 interface HeaderProps {}
 
 const Header: React.FC<HeaderProps> = () => {
+  const { data: pages } = useSWR('pages', getPages);
+  const { headerDisplayName, headerFontColor, headerBackgroundColor } =
+    useHeaderStore();
+
   return (
-    <div className="flex items-center justify-between px-8 py-4 border-b border-gray-200">
+    <div
+      className="flex items-center justify-between px-8 py-4 border-b border-gray-200"
+      style={{ color: headerFontColor, background: headerBackgroundColor }}
+    >
       <div className="flex items-center gap-4">
-        <span className="font-semibold text-lg">Name</span>
+        <span className="font-semibold text-lg">
+          {headerDisplayName || 'Name'}
+        </span>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="font-semibold">Name</span>
-        <button className="border border-gray-300 rounded-full px-4 py-1 flex items-center gap-2">
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
+          {(Array.isArray(pages) ? pages : []).map((p: any) => (
+            <span key={p.id} className="whitespace-nowrap font-medium">
+              {p.title}
+            </span>
+          ))}
+        </div>
+        <button className="border border-current rounded-full px-4 py-1 flex items-center gap-2">
           Contact
         </button>
       </div>

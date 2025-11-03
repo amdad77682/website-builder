@@ -30,8 +30,8 @@ const PreviewHeader: FC<{ headerData: any; viewMode: ViewMode }> = ({
   return (
     <header
       style={{
-        backgroundColor: backdrop_color || '#ffffff',
-        color: font_color || '#000000',
+        backgroundColor: backdrop_color || '#000000',
+        color: font_color || '#ffffff',
       }}
       className={`${isMobile ? 'flex-col px-4' : 'flex-row px-8'} flex items-center justify-between py-4 border-b border-gray-200`}
     >
@@ -79,7 +79,7 @@ const PreviewTextBlock: FC<{ content: any }> = ({ content }) => {
 };
 
 const PreviewVideoBlock: FC<{ content: any }> = ({ content }) => {
-  const videoUrl = content?.videoUrl || content?.url || content?.src;
+  const videoUrl = content?.mediaId || content?.url || content?.src;
   const thumbnail = content?.thumbnail;
 
   return (
@@ -110,7 +110,7 @@ const PreviewGalleryBlock: FC<{ content: any; viewMode: ViewMode }> = ({
   content,
   viewMode,
 }) => {
-  const images = content?.images || content?.items || [];
+  const images = content?.mediaIds || content?.items || [];
 
   if (!Array.isArray(images) || images.length === 0) {
     return (
@@ -155,12 +155,12 @@ const PreviewSplitViewBlock: FC<{ content: any; viewMode: ViewMode }> = ({
         {leftContent.type === 'text' && (
           <div
             className="text-gray-800"
-            dangerouslySetInnerHTML={{ __html: leftContent.text || '' }}
+            dangerouslySetInnerHTML={{ __html: content.text || '' }}
           />
         )}
-        {leftContent.type === 'gallery' && leftContent.mediaId && (
+        {leftContent.type === 'gallery' && content.mediaIds && (
           <img
-            src={leftContent.mediaId}
+            src={content.mediaIds[0]}
             alt="Split view left"
             className="w-full h-auto object-contain"
           />
@@ -170,12 +170,12 @@ const PreviewSplitViewBlock: FC<{ content: any; viewMode: ViewMode }> = ({
         {rightContent.type === 'text' && (
           <div
             className="text-gray-800"
-            dangerouslySetInnerHTML={{ __html: rightContent.text || '' }}
+            dangerouslySetInnerHTML={{ __html: content.text || '' }}
           />
         )}
-        {rightContent.type === 'gallery' && rightContent.mediaId && (
+        {rightContent.type === 'gallery' && content.mediaIds && (
           <img
-            src={rightContent.mediaId}
+            src={content.mediaIds[0]}
             alt="Split view right"
             className="w-full h-auto object-contain"
           />

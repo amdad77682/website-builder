@@ -10,6 +10,7 @@ import {
   getPages,
   updatePage,
 } from '@/services/pageService';
+import { useHeaderStore } from '@/store/header';
 import { Dropdown, Input, Menu, message, Modal } from 'antd';
 import {
   CaseSensitive,
@@ -20,7 +21,9 @@ import {
   Plus,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import useSWR from 'swr';
+
 interface SidebarProps {}
 
 const Sidebar: React.FC<SidebarProps> = () => {
@@ -42,36 +45,48 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const [newPageName, setNewPageName] = useState('');
   const [headerDisplayName, setHeaderDisplayName] = useState('');
   const [headerItems, setHeaderItems] = useState<any[]>([]);
-  const [headerFontColor, setHeaderFontColor] = useState('#FFFFFF');
-  const [headerBackgroundColor, setHeaderBackgroundColor] = useState('#000000');
+  const [headerFontColor, setHeaderFontColor] = useState('#000000');
+  const [headerBackgroundColor, setHeaderBackgroundColor] = useState('#FFFFFF');
+  const updateTimerRef = useRef<number | null>(null);
 
-  // Fetch pages from API
+  // SWR: fetch pages and headers
+  const { data: swrPages } = useSWR('pages', getPages);
+  const { data: swrHeaders } = useSWR('headers', () => getHeaders(1));
+
+  const {
+    setHeaderFromAPI,
+    setHeaderDisplayName: storeSetHeaderDisplayName,
+    setHeaderFontColor: storeSetHeaderFontColor,
+    setHeaderBackgroundColor: storeSetHeaderBackgroundColor,
+  } = useHeaderStore();
+
   useEffect(() => {
-    async function fetchPages() {
-      setLoading(true);
-      try {
-        const data = await getPages();
-        setPages(Array.isArray(data) ? data : []);
-      } catch (err) {
-        message.error('Failed to load pages');
-      }
-      setLoading(false);
+    if (Array.isArray(swrPages)) {
+      setPages(swrPages);
     }
-    fetchPages();
-  }, []);
+  }, [swrPages]);
+
   useEffect(() => {
-    async function fetchHeader() {
-      setLoading(true);
-      try {
-        const data = await getHeaders();
-        setHeaderItems(data);
-      } catch (err) {
-        message.error('Failed to load pages');
+    if (Array.isArray(swrHeaders)) {
+      setHeaderItems(swrHeaders);
+      if (swrHeaders.length > 0) {
+        const h = swrHeaders[0];
+        setHeaderFromAPI(h);
+        storeSetHeaderDisplayName(h.displayed_name || '');
+        setHeaderDisplayName(h.displayed_name || '');
+        storeSetHeaderFontColor(h.font_color || '#000000');
+        setHeaderFontColor(h.font_color || '#000000');
+        storeSetHeaderBackgroundColor(h.backdrop_color || '#FFFFFF');
+        setHeaderBackgroundColor(h.backdrop_color || '#FFFFFF');
       }
-      setLoading(false);
     }
-    fetchHeader();
-  }, []);
+  }, [
+    swrHeaders,
+    setHeaderFromAPI,
+    storeSetHeaderDisplayName,
+    storeSetHeaderFontColor,
+    storeSetHeaderBackgroundColor,
+  ]);
 
   // Add new page
   const handleAddPage = async () => {
@@ -143,28 +158,25 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const handleUpdateHeaderStyle = async () => {
     try {
       if (headerItems.length === 0) {
-        const response = await createHeader({
+        const created = await createHeader({
           site_id: 1,
           displayed_name: headerDisplayName,
           font_color: headerFontColor,
           backdrop_color: headerBackgroundColor,
-          items: headerItems,
+          items: [],
         });
+        setHeaderItems([created]);
+      } else {
+        const updated = await updateHeader(headerItems[0].id, {
+          site_id: 1,
+          displayed_name: headerDisplayName,
+          font_color: headerFontColor,
+          backdrop_color: headerBackgroundColor,
+          items: [],
+        });
+        setHeaderItems([updated]);
       }
-
-      const response = await updateHeader(headerItems[0].id, {
-        site_id: 1,
-        displayed_name: headerDisplayName,
-        font_color: headerFontColor,
-        backdrop_color: headerBackgroundColor,
-        items: [],
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update header style');
-      }
-
-      await response.json();
+      // sync to header store
     } catch (err: any) {
       message.error(err.message || 'Failed to update header style');
     }
@@ -244,12 +256,15 @@ const Sidebar: React.FC<SidebarProps> = () => {
               placeholder="Name"
               value={headerDisplayName}
               onChange={e => {
-                setHeaderDisplayName(e.target.value);
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  handleUpdateHeaderStyle();
+                const val = e.target.value;
+                setHeaderDisplayName(val);
+                storeSetHeaderDisplayName(val);
+                if (updateTimerRef.current !== null) {
+                  window.clearTimeout(updateTimerRef.current);
                 }
+                updateTimerRef.current = window.setTimeout(() => {
+                  handleUpdateHeaderStyle();
+                }, 600);
               }}
               className="bg-[#FFFFFF33]! border-none! text-white! placeholder:text-white!"
             />
@@ -267,7 +282,9 @@ const Sidebar: React.FC<SidebarProps> = () => {
                   type="color"
                   value={headerFontColor}
                   onChange={e => {
-                    setHeaderFontColor(e.target.value);
+                    const value = e.target.value;
+                    setHeaderFontColor(value);
+                    storeSetHeaderFontColor(value);
                     handleUpdateHeaderStyle();
                   }}
                   className="color-picker"
@@ -303,7 +320,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
                     type="color"
                     value={headerBackgroundColor}
                     onChange={e => {
-                      setHeaderBackgroundColor(e.target.value);
+                      const value = e.target.value;
+                      setHeaderBackgroundColor(value);
+
+                      storeSetHeaderBackgroundColor(value);
                       handleUpdateHeaderStyle();
                     }}
                     className="color-picker"
