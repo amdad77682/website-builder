@@ -1,20 +1,40 @@
-import { Input } from 'antd';
 import { Plus } from 'lucide-react';
-import PublicGalleryUploader from './common/GallaryUploader';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MinimalArticleEditor from './common/ArticleEditor';
+import PublicGalleryUploader from './common/GallaryUploader';
 
 interface SplitViewProps {
   content: any;
+  handleUpdateBlock: (content: {
+    mediaIds?: string[];
+    text?: string;
+    placeholder?: string;
+  }) => void;
 }
 
-const SplitView: React.FC<SplitViewProps> = ({ content }) => {
+const SplitView: React.FC<SplitViewProps> = ({
+  content,
+  handleUpdateBlock,
+}) => {
   const [gallaryModalOpen, setgallaryModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const handleSelectedImages = (image: string) => {
     console.log('Selected image:', image);
     setSelectedImages(images => [...images, image]);
     setgallaryModalOpen(false);
+    handleUpdateBlock({ mediaIds: [...selectedImages, image] });
+  };
+  useEffect(() => {
+    if (content) {
+      setSelectedImages(content?.mediaIds);
+    }
+  }, [content]);
+
+  const handleContentChange = (content: {
+    text: string;
+    placeholder: string;
+  }) => {
+    handleUpdateBlock({ text: content.text, placeholder: content.placeholder });
   };
   return (
     <div className="flex ">
@@ -52,8 +72,11 @@ const SplitView: React.FC<SplitViewProps> = ({ content }) => {
         </PublicGalleryUploader>
       </div>
       <div className="w-1/2 p-4">
-        {/* Right side content */}
-        <MinimalArticleEditor />
+        <MinimalArticleEditor
+          text={content?.text || ''}
+          placeholder={content?.right?.placeholder || ''}
+          onContentChange={handleContentChange}
+        />
       </div>
     </div>
   );

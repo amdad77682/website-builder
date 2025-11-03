@@ -1,18 +1,19 @@
 'use client';
 import {
-  getBlocks,
   deleteBlock as apiDeleteBlock,
+  getBlocks,
   reorderBlocks,
+  updateBlock,
 } from '@/services/blocksService';
 import { useBlockStore } from '@/store/blocks';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import useSWR from 'swr';
+import Gallery from './Gallary';
+import SplitView from './SplitView';
 import TextBlock from './TextBlock';
 import VideoBlock from './VideoBlock';
-import SplitView from './SplitView';
-import Gallery from './Gallary';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 interface BlocksProps {}
 
 const Blocks: React.FC<BlocksProps> = () => {
@@ -22,6 +23,7 @@ const Blocks: React.FC<BlocksProps> = () => {
     setBlocks,
     deleteBlock: storeDeleteBlock,
     reorderBlocks: storeReorderBlocks,
+    updateBlock: storeUpdateBlock,
   } = useBlockStore();
   const { data: blockData, isLoading } = useSWR(
     params?.id ? `blocks_${params?.id}` : null,
@@ -71,6 +73,34 @@ const Blocks: React.FC<BlocksProps> = () => {
     await apiDeleteBlock(id);
     storeDeleteBlock(id);
   };
+  const handleUpdateBlock = async (
+    id: string | number,
+    content: {
+      text?: string;
+      placeholder?: string;
+      mediaId?: string;
+      mediaIds?: string[];
+      thumbnail?: string;
+    },
+    config?: any
+  ) => {
+    await updateBlock(id as string, {
+      config: {
+        content: {
+          ...config,
+          ...content,
+        },
+      },
+    });
+    storeUpdateBlock(id as string, {
+      config: {
+        content: {
+          ...config,
+          ...content,
+        },
+      },
+    });
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -86,14 +116,65 @@ const Blocks: React.FC<BlocksProps> = () => {
           {(() => {
             switch (block?.type) {
               case 'text':
-                return <TextBlock content={block.config?.content} />;
+                return (
+                  <TextBlock
+                    content={block.config?.content}
+                    handleUpdateBlock={(content: {
+                      text: string;
+                      placeholder: string;
+                    }) =>
+                      handleUpdateBlock(
+                        block.id,
+                        content,
+                        block.config?.content
+                      )
+                    }
+                  />
+                );
 
               case 'video':
-                return <VideoBlock content={block.config?.content} />;
+                return (
+                  <VideoBlock
+                    content={block.config?.content}
+                    handleUpdateBlock={(content: { mediaId: string }) =>
+                      handleUpdateBlock(
+                        block.id,
+                        content,
+                        block.config?.content
+                      )
+                    }
+                  />
+                );
               case 'gallery':
-                return <Gallery content={block.config?.content} />;
+                return (
+                  <Gallery
+                    content={block.config?.content}
+                    handleUpdateBlock={(content: { mediaIds: string[] }) =>
+                      handleUpdateBlock(
+                        block.id,
+                        content,
+                        block.config?.content
+                      )
+                    }
+                  />
+                );
               case 'split':
-                return <SplitView content={block.config?.content} />;
+                return (
+                  <SplitView
+                    content={block.config?.content}
+                    handleUpdateBlock={(content: {
+                      mediaIds?: string[];
+                      text?: string;
+                      placeholder?: string;
+                    }) =>
+                      handleUpdateBlock(
+                        block.id,
+                        content,
+                        block.config?.content
+                      )
+                    }
+                  />
+                );
               // Add more cases as needed
               default:
                 return <div>Unknown block type: {block?.type}</div>;

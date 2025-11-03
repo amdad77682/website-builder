@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface MinimalArticleEditorProps {
   placeholder?: string;
+  text?: string;
+  onContentChange: (content: { text: string; placeholder: string }) => void;
 }
 
 interface PopoverPosition {
@@ -12,6 +14,8 @@ interface PopoverPosition {
 
 const MinimalArticleEditor: React.FC<MinimalArticleEditorProps> = ({
   placeholder,
+  text,
+  onContentChange,
 }) => {
   const [showPopover, setShowPopover] = useState<boolean>(false);
   const [popoverPosition, setPopoverPosition] = useState<PopoverPosition>({
@@ -19,6 +23,7 @@ const MinimalArticleEditor: React.FC<MinimalArticleEditorProps> = ({
     left: 0,
   });
   const editorRef = useRef<HTMLDivElement>(null);
+  const debounceTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Focus the editor on mount
@@ -45,6 +50,25 @@ const MinimalArticleEditor: React.FC<MinimalArticleEditorProps> = ({
 
     setShowPopover(true);
   };
+  const handleContentChange = (content: string) => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = window.setTimeout(() => {
+      onContentChange({
+        text: content,
+        placeholder: placeholder || '',
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const applyFormat = (command: string, value?: string): void => {
     document.execCommand(command, false, value);
@@ -91,6 +115,10 @@ const MinimalArticleEditor: React.FC<MinimalArticleEditorProps> = ({
         contentEditable
         onMouseUp={handleSelect}
         onKeyUp={handleSelect}
+        onInput={e =>
+          handleContentChange((e.target as HTMLDivElement).innerText || '')
+        }
+        dangerouslySetInnerHTML={{ __html: text || '' }}
         onKeyDown={handleKeyDown}
         onBlur={() => setTimeout(() => setShowPopover(false), 200)}
         data-placeholder={placeholder || 'Start writing...'}

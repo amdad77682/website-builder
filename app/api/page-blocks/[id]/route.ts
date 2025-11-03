@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } =await params;
 
   if (!id) {
     return NextResponse.json(
@@ -41,7 +41,7 @@ export async function PUT(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } =await params;
   const body = await request.json();
   const { page_id, type, config, order_index } = body; // All fields expected for PUT
 
@@ -85,7 +85,7 @@ export async function PATCH(
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } =await params;
   const body = await request.json(); // Body can contain partial data
 
   if (!id) {

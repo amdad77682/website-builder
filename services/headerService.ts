@@ -1,7 +1,8 @@
 import api from '../lib/api';
 
-export const getHeaders = async () => {
-  const res = await api.get('/header-menus?site_id=1');
+export const getHeaders = async (site_id?: string | number) => {
+  const siteId = site_id || 1;
+  const res = await api.get(`/header-menus?site_id=${siteId}`);
   return res.data;
 };
 

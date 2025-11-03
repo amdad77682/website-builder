@@ -1,19 +1,27 @@
 import { Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import PublicGalleryUploader from './common/GallaryUploader';
-import { useState } from 'react';
 
 interface GalleryProps {
   content: any;
+  handleUpdateBlock: (content: { mediaIds: string[] }) => void;
 }
 
-const Gallery: React.FC<GalleryProps> = ({ content }) => {
+const Gallery: React.FC<GalleryProps> = ({ content, handleUpdateBlock }) => {
   const [gallaryModalOpen, setgallaryModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const handleSelectedImages = (image: string) => {
     console.log('Selected image:', image);
     setSelectedImages(images => [...images, image]);
     setgallaryModalOpen(false);
+    handleUpdateBlock({ mediaIds: [...selectedImages, image] });
   };
+  useEffect(() => {
+    if (content) {
+      setSelectedImages(content?.mediaIds);
+    }
+  }, [content]);
+
   return (
     <div>
       <div className="w-full p-4">

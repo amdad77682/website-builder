@@ -1,4 +1,15 @@
 'use client';
+import {
+  createHeader,
+  getHeaders,
+  updateHeader,
+} from '@/services/headerService';
+import {
+  createPage,
+  deletePage,
+  getPages,
+  updatePage,
+} from '@/services/pageService';
 import { Dropdown, Input, Menu, message, Modal } from 'antd';
 import {
   CaseSensitive,
@@ -8,23 +19,14 @@ import {
   Pencil,
   Plus,
 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import {
-  getPages,
-  getPage,
-  createPage,
-  updatePage,
-  deletePage,
-} from '@/services/pageService';
-import {
-  createHeader,
-  getHeader,
-  getHeaders,
-  updateHeader,
-} from '@/services/headerService';
 interface SidebarProps {}
 
 const Sidebar: React.FC<SidebarProps> = () => {
+  const params = useParams();
+  const router = useRouter();
+  const pageId = params?.id as string | undefined;
   const [pages, setPages] = useState<any[]>([]);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [renamePageId, setRenamePageId] = useState<string | number | null>(
@@ -137,7 +139,6 @@ const Sidebar: React.FC<SidebarProps> = () => {
     setLoading(false);
   };
 
-
   // Update header style
   const handleUpdateHeaderStyle = async () => {
     try {
@@ -189,11 +190,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
       children: pages.map(page => ({
         key: page.id || page.title,
         label: (
-          <div
-            className="flex items-center justify-between w-full"
-            onClick={() => (window.location.href = `/page/${page.id}`)} // Redirect to page
-          >
-            <span>{page.title}</span>
+          <div className="flex items-center justify-between w-full">
+            <span onClick={() => router.push(`/page/${page.id}`)}>
+              {page.title}
+            </span>
             <Dropdown
               trigger={['click']}
               menu={{
@@ -336,7 +336,8 @@ const Sidebar: React.FC<SidebarProps> = () => {
             <Menu
               mode="inline"
               theme="dark"
-              defaultOpenKeys={['pages', 'header-menu']}
+              defaultOpenKeys={['website-design', 'pages', 'header-menu']}
+              selectedKeys={pageId ? [pageId] : []}
               items={[
                 {
                   key: 'website-design',
@@ -345,7 +346,6 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 },
               ]}
               style={{ background: 'transparent', color: 'white' }}
-              selectable={false}
             />
           </div>
         </nav>
