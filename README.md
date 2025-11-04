@@ -553,7 +553,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
 The project is configured for deployment on Vercel.
 
-**Deployment URL**: [Add your Vercel deployment URL here]
+**Deployment URL**: https://website-builder-navy-nine.vercel.app/page/6
 
 ### Deployment Steps
 
