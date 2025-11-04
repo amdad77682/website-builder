@@ -1,7 +1,7 @@
 'use client';
 import { getBlocks } from '@/services/blocksService';
 import { getHeaders } from '@/services/headerService';
-import { getPage } from '@/services/pageService';
+import { getPage, getPages } from '@/services/pageService';
 import { Monitor, Smartphone } from 'lucide-react';
 import { FC, useState } from 'react';
 import useSWR from 'swr';
@@ -20,6 +20,7 @@ const PreviewHeader: FC<{ headerData: any; viewMode: ViewMode }> = ({
   if (!headerData || !Array.isArray(headerData) || headerData.length === 0) {
     return null;
   }
+  const { data: pages } = useSWR('pages', getPages);
 
   // Get the first header menu
   const header = headerData[0];
@@ -41,16 +42,16 @@ const PreviewHeader: FC<{ headerData: any; viewMode: ViewMode }> = ({
         </span>
       </div>
       <nav
-        className={`${isMobile ? 'flex-col gap-2 w-full mt-2' : 'flex-row gap-4'} flex items-center`}
+        className={`${isMobile ? 'hidden flex-col gap-2 w-full mt-2' : 'flex-row gap-4'} flex items-center`}
       >
-        {Array.isArray(items) &&
-          items.map((item: any, index: number) => (
+        {Array.isArray(pages) &&
+          pages.map((item: any, index: number) => (
             <a
               key={index}
-              href={item.url || '#'}
+              href={`/page/${item?.id}`}
               className="font-semibold hover:opacity-70 transition-opacity"
             >
-              {item.label || item.name || `Menu ${index + 1}`}
+              {item.title}
             </a>
           ))}
         <button className="border border-gray-300 rounded-full px-4 py-1 flex items-center gap-2 hover:bg-gray-50 transition-colors">
@@ -83,19 +84,19 @@ const PreviewVideoBlock: FC<{ content: any }> = ({ content }) => {
   const thumbnail = content?.thumbnail;
 
   return (
-    <div className="w-full bg-black flex items-center justify-center min-h-[400px]">
+    <div className="w-full bg-black flex items-center justify-center h-[200px] md:h-[300px]">
       {videoUrl ? (
         <video
           src={videoUrl}
           controls
-          className="max-w-full max-h-[600px]"
+          className="w-full max-h-[300px]"
           poster={thumbnail}
         />
       ) : thumbnail ? (
         <img
           src={thumbnail}
           alt="Video thumbnail"
-          className="max-w-full max-h-[600px]"
+          className="w-full max-h-[300px]"
         />
       ) : (
         <div className="text-white text-center">

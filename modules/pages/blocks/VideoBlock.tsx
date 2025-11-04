@@ -75,10 +75,9 @@ const VideoBlock: React.FC<VideoBlockProps> = ({
             {/* Thumbnail overlay when not playing (or if no thumbnail, show gradient) */}
             {!isPlaying && (
               <div className="absolute inset-0">
-                {selectedVideo.thumbnail ? (
+                {content.thumbnail ? (
                   <img
-                    src={selectedVideo.thumbnail}
-                    alt={selectedVideo.title}
+                    src={content?.thumbnail}
                     className="w-full h-full object-cover"
                   />
                 ) : null}
