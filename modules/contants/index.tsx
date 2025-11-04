@@ -37,7 +37,7 @@ export const DESIGNS = [
       right: {
         type: 'text',
         placeholder:
-          'Pellentesque est ex, posuere non dapibus in, ullamcorper vitae nibh. Vestibulum euismod, nibh eget facilisis tristique, tellus justo aliquam tellus, vitae lobortis augue lectus sit amet felis. Cras vehicula vel risus consequat interdum. Ut egestas commodo egestas. Duis cursus pretium tempor. Proin hendrerit, enim ut eleifend vulputate, ex mi iaculis nunc, ac feugiat mi tortor nec leo. Aliquam laoreet odio quis dui viverra lobortis. Sed dictum malesuada nisi ac pretium. Integer venenatis posuere libero nec cursus. Curabitur vitae erat ligula. Duis in auctor nisl, accumsan gravida libero. Vestibulum vitae urna diam. Sed egestas erat interdum nisl cursus, in dictum urna tincidunt. In dui enim, ullamcorper quis facilisis quis, dignissim in tortor.',
+          'Pellentesque est ex, posuere non dapibus in, ullamcorper vitae nibh. Vestibulum euismod, nibh eget facilisis tristique, tellus justo aliquam tellus, vitae lobortis augue lectus sit amet felis. Cras vehicula vel risus consequat interdum. Ut egestas commodo egestas. Duis cursus pretium tempor. Proin hendrerit, enim ut eleifend vulputate, ex mi iaculis nunc, ac feugiat mi tortor nec leo. Aliquam laoreet odio quis dui viverra lobortis. Sed dictum malesuada nisi ac pretium. Integer venenatis posuere libero nec cursus. Curabitur vitae erat ligula. Duis in auctor nisl, accumsan gravida libero. Vestibulum vitae urna diam. Sed egestas erat interdum nisl cursus, in dictum urna tidunt. In dui enim, ullamcorper quis facilisis quis, dignissim in tortor.',
       },
       left: {
         type: 'gallery',
@@ -55,3 +55,15 @@ export const DESIGNS = [
     },
   },
 ];
+
+// Application constants
+export const DEFAULT_SITE_ID = 1;
+export const DEFAULT_FONT_COLOR = '#000000';
+export const DEFAULT_BACKGROUND_COLOR = '#FFFFFF';
+export const DEBOUNCE_DELAY = 600;
+
+// SWR cache keys
+export const SWR_CACHE_KEYS = {
+  PAGES: 'pages',
+  HEADERS: 'headers',
+} as const;

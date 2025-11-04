@@ -1,5 +1,12 @@
 'use client';
 import {
+  DEBOUNCE_DELAY,
+  DEFAULT_BACKGROUND_COLOR,
+  DEFAULT_FONT_COLOR,
+  DEFAULT_SITE_ID,
+  SWR_CACHE_KEYS,
+} from '@/modules/contants';
+import {
   createHeader,
   getHeaders,
   updateHeader,
@@ -21,10 +28,13 @@ import {
   Plus,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 
 interface SidebarProps {}
+
+// Stable SWR fetcher function
+const fetchHeaders = () => getHeaders(DEFAULT_SITE_ID);
 
 const Sidebar: React.FC<SidebarProps> = () => {
   const params = useParams();
@@ -45,13 +55,15 @@ const Sidebar: React.FC<SidebarProps> = () => {
   const [newPageName, setNewPageName] = useState('');
   const [headerDisplayName, setHeaderDisplayName] = useState('');
   const [headerItems, setHeaderItems] = useState<any[]>([]);
-  const [headerFontColor, setHeaderFontColor] = useState('#000000');
-  const [headerBackgroundColor, setHeaderBackgroundColor] = useState('#FFFFFF');
+  const [headerFontColor, setHeaderFontColor] = useState(DEFAULT_FONT_COLOR);
+  const [headerBackgroundColor, setHeaderBackgroundColor] = useState(
+    DEFAULT_BACKGROUND_COLOR
+  );
   const updateTimerRef = useRef<number | null>(null);
 
   // SWR: fetch pages and headers
-  const { data: swrPages } = useSWR('pages', getPages);
-  const { data: swrHeaders } = useSWR('headers', () => getHeaders(1));
+  const { data: swrPages } = useSWR(SWR_CACHE_KEYS.PAGES, getPages);
+  const { data: swrHeaders } = useSWR(SWR_CACHE_KEYS.HEADERS, fetchHeaders);
 
   const {
     setHeaderFromAPI,
@@ -74,12 +86,16 @@ const Sidebar: React.FC<SidebarProps> = () => {
         console.log(h);
 
         setHeaderFromAPI(h);
-        storeSetHeaderDisplayName(h.displayed_name || '');
-        setHeaderDisplayName(h.displayed_name || '');
-        storeSetHeaderFontColor(h.font_color || '#000000');
-        setHeaderFontColor(h.font_color || '#000000');
-        storeSetHeaderBackgroundColor(h.backdrop_color || '#FFFFFF');
-        setHeaderBackgroundColor(h.backdrop_color || '#FFFFFF');
+        const displayName = h.displayed_name || '';
+        const fontColor = h.font_color || DEFAULT_FONT_COLOR;
+        const backgroundColor = h.backdrop_color || DEFAULT_BACKGROUND_COLOR;
+
+        storeSetHeaderDisplayName(displayName);
+        setHeaderDisplayName(displayName);
+        storeSetHeaderFontColor(fontColor);
+        setHeaderFontColor(fontColor);
+        storeSetHeaderBackgroundColor(backgroundColor);
+        setHeaderBackgroundColor(backgroundColor);
       }
     }
   }, [
@@ -90,8 +106,17 @@ const Sidebar: React.FC<SidebarProps> = () => {
     storeSetHeaderBackgroundColor,
   ]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimerRef.current !== null) {
+        window.clearTimeout(updateTimerRef.current);
+      }
+    };
+  }, []);
+
   // Add new page
-  const handleAddPage = async () => {
+  const handleAddPage = useCallback(async () => {
     if (!newPageName.trim()) {
       message.error('Page name required');
       return;
@@ -101,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       const data = await createPage({
         title: newPageName,
         slug: newPageName.toLowerCase().replace(/\s+/g, '-'),
-        site_id: 1,
+        site_id: DEFAULT_SITE_ID,
       });
       message.success('Page added');
       setNewPageName('');
@@ -111,10 +136,10 @@ const Sidebar: React.FC<SidebarProps> = () => {
       message.error(err?.response?.data?.error || 'Failed to add page');
     }
     setLoading(false);
-  };
+  }, [newPageName]);
 
   // Rename page
-  const handleRenamePage = async () => {
+  const handleRenamePage = useCallback(async () => {
     if (!renamePageName.trim() || !renamePageId) {
       message.error('Page name required');
       return;
@@ -133,15 +158,15 @@ const Sidebar: React.FC<SidebarProps> = () => {
       message.error(err?.response?.data?.error || 'Failed to rename page');
     }
     setLoading(false);
-  };
+  }, [renamePageName, renamePageId]);
 
   // Delete page
-  const handleDeletePage = (id: string | number) => {
+  const handleDeletePage = useCallback((id: string | number) => {
     setDeletePageId(id);
     setDeleteModalOpen(true);
-  };
+  }, []);
 
-  const confirmDeletePage = async () => {
+  const confirmDeletePage = useCallback(async () => {
     if (!deletePageId) return;
     setLoading(true);
     try {
@@ -154,14 +179,14 @@ const Sidebar: React.FC<SidebarProps> = () => {
       message.error(err?.response?.data?.error || 'Failed to delete page');
     }
     setLoading(false);
-  };
+  }, [deletePageId]);
 
   // Update header style
-  const handleUpdateHeaderStyle = async () => {
+  const handleUpdateHeaderStyle = useCallback(async () => {
     try {
       if (headerItems.length === 0) {
         const created = await createHeader({
-          site_id: 1,
+          site_id: DEFAULT_SITE_ID,
           displayed_name: headerDisplayName,
           font_color: headerFontColor,
           backdrop_color: headerBackgroundColor,
@@ -170,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
         setHeaderItems([created]);
       } else {
         const updated = await updateHeader(headerItems[0].id, {
-          site_id: 1,
+          site_id: DEFAULT_SITE_ID,
           displayed_name: headerDisplayName,
           font_color: headerFontColor,
           backdrop_color: headerBackgroundColor,
@@ -182,30 +207,100 @@ const Sidebar: React.FC<SidebarProps> = () => {
     } catch (err: any) {
       message.error(err.message || 'Failed to update header style');
     }
-  };
+  }, [headerItems, headerDisplayName, headerFontColor, headerBackgroundColor]);
 
-  // Menu items for Website Design
-  const websiteDesignItems = [
-    {
-      key: 'pages',
-      icon: <LayoutList size={18} />,
-      label: (
-        <div className="flex items-center justify-between w-full">
-          <span>Pages</span>
-          <span className="flex items-center gap-2">
-            <Plus
-              size={16}
-              className="cursor-pointer"
-              onClick={() => setAddModalOpen(true)}
-            />
-          </span>
-        </div>
-      ),
-      children: pages.map(page => ({
+  // Memoized handlers for header input changes
+  const handleHeaderDisplayNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setHeaderDisplayName(val);
+      storeSetHeaderDisplayName(val);
+      if (updateTimerRef.current !== null) {
+        window.clearTimeout(updateTimerRef.current);
+      }
+      updateTimerRef.current = window.setTimeout(() => {
+        handleUpdateHeaderStyle();
+      }, DEBOUNCE_DELAY);
+    },
+    [storeSetHeaderDisplayName, handleUpdateHeaderStyle]
+  );
+
+  const handleHeaderFontColorChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setHeaderFontColor(value);
+      storeSetHeaderFontColor(value);
+      handleUpdateHeaderStyle();
+    },
+    [storeSetHeaderFontColor, handleUpdateHeaderStyle]
+  );
+
+  const handleHeaderBackgroundColorChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setHeaderBackgroundColor(value);
+      storeSetHeaderBackgroundColor(value);
+      handleUpdateHeaderStyle();
+    },
+    [storeSetHeaderBackgroundColor, handleUpdateHeaderStyle]
+  );
+
+  // Memoized handlers for modal actions
+  const handleOpenAddModal = useCallback(() => {
+    setAddModalOpen(true);
+  }, []);
+
+  const handleCloseAddModal = useCallback(() => {
+    setAddModalOpen(false);
+  }, []);
+
+  const handleCloseDeleteModal = useCallback(() => {
+    setDeleteModalOpen(false);
+  }, []);
+
+  const handleCloseRenameModal = useCallback(() => {
+    setRenameModalOpen(false);
+  }, []);
+
+  const handleRenamePageClick = useCallback(
+    (pageId: string | number, pageTitle: string) => {
+      setRenamePageId(pageId);
+      setRenamePageName(pageTitle);
+      setRenameModalOpen(true);
+    },
+    []
+  );
+
+  const handlePageNavigation = useCallback(
+    (pageId: string | number) => {
+      router.push(`/page/${pageId}`);
+    },
+    [router]
+  );
+
+  // Memoized input handlers for modals
+  const handleNewPageNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setNewPageName(e.target.value);
+    },
+    []
+  );
+
+  const handleRenamePageNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setRenamePageName(e.target.value);
+    },
+    []
+  );
+
+  // Memoized menu items for pages
+  const pageMenuItems = useMemo(
+    () =>
+      pages.map(page => ({
         key: page.id || page.title,
         label: (
           <div className="flex items-center justify-between w-full">
-            <span onClick={() => router.push(`/page/${page.id}`)}>
+            <span onClick={() => handlePageNavigation(page.id)}>
               {page.title}
             </span>
             <Dropdown
@@ -215,11 +310,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
                   {
                     key: 'rename',
                     label: 'Rename',
-                    onClick: () => {
-                      setRenamePageId(page.id);
-                      setRenamePageName(page.title);
-                      setRenameModalOpen(true);
-                    },
+                    onClick: () => handleRenamePageClick(page.id, page.title),
                   },
                   {
                     key: 'delete',
@@ -234,110 +325,132 @@ const Sidebar: React.FC<SidebarProps> = () => {
           </div>
         ),
       })),
-    },
-    {
-      key: 'header-menu',
-      icon: <LayoutList size={18} />,
-      label: 'Header/Menu',
-      children: [
-        {
-          key: 'header-display-name',
-          label: (
-            <div className="space-y-1">
-              <label className="flex items-center text-sm gap-2 text-gray-300">
-                <Pencil size={12} />
-                Displayed name
-              </label>
-            </div>
-          ),
-        },
-        {
-          key: 'header-background-color',
-          label: (
-            <Input
-              placeholder="Name"
-              value={headerDisplayName}
-              onChange={e => {
-                const val = e.target.value;
-                setHeaderDisplayName(val);
-                storeSetHeaderDisplayName(val);
-                if (updateTimerRef.current !== null) {
-                  window.clearTimeout(updateTimerRef.current);
-                }
-                updateTimerRef.current = window.setTimeout(() => {
-                  handleUpdateHeaderStyle();
-                }, 600);
-              }}
-              className="bg-[#FFFFFF33]! border-none! text-white! placeholder:text-white!"
-            />
-          ),
-        },
-        {
-          key: 'header-font-color',
-          label: (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center text-sm gap-2 text-gray-300">
-                <CaseSensitive size={12} />
-                <span className="text-xs">Font Color</span>
+    [pages, handlePageNavigation, handleRenamePageClick, handleDeletePage]
+  );
 
-                <Input
-                  type="color"
-                  value={headerFontColor}
-                  onChange={e => {
-                    const value = e.target.value;
-                    setHeaderFontColor(value);
-                    storeSetHeaderFontColor(value);
-                    handleUpdateHeaderStyle();
-                  }}
-                  className="color-picker"
-                />
+  // Menu items for Website Design
+  const websiteDesignItems = useMemo(
+    () => [
+      {
+        key: 'pages',
+        icon: <LayoutList size={18} />,
+        label: (
+          <div className="flex items-center justify-between w-full">
+            <span>Pages</span>
+            <span className="flex items-center gap-2">
+              <Plus
+                size={16}
+                className="cursor-pointer"
+                onClick={handleOpenAddModal}
+              />
+            </span>
+          </div>
+        ),
+        children: pageMenuItems,
+      },
+      {
+        key: 'header-menu',
+        icon: <LayoutList size={18} />,
+        label: 'Header/Menu',
+        children: [
+          {
+            key: 'header-display-name',
+            label: (
+              <div className="space-y-1">
+                <label className="flex items-center text-sm gap-2 text-gray-300">
+                  <Pencil size={12} />
+                  Displayed name
+                </label>
               </div>
-            </div>
-          ),
-        },
-        {
-          key: 'header-backdrop-color',
-          label: (
-            <div className="space-y-1">
+            ),
+          },
+          {
+            key: 'header-background-color',
+            label: (
+              <Input
+                placeholder="Name"
+                value={headerDisplayName}
+                onChange={handleHeaderDisplayNameChange}
+                className="bg-[#FFFFFF33]! border-none! text-white! placeholder:text-white!"
+              />
+            ),
+          },
+          {
+            key: 'header-font-color',
+            label: (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center text-sm gap-2 text-gray-300">
-                  <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 10 10"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M0.371094 2.59407L2.59456 0.370605M5.92976 0.370605L0.371094 5.92927M0.371094 9.26447L9.26496 0.370605M9.26496 3.7058L3.70629 9.26447M9.26496 7.041L7.04149 9.26447"
-                      stroke="#DFDFDF"
-                      strokeWidth="0.741155"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-xs">Backdrop Color</span>
-
+                  <CaseSensitive size={12} />
+                  <span className="text-xs">Font Color</span>
                   <Input
                     type="color"
-                    value={headerBackgroundColor}
-                    onChange={e => {
-                      const value = e.target.value;
-                      setHeaderBackgroundColor(value);
-
-                      storeSetHeaderBackgroundColor(value);
-                      handleUpdateHeaderStyle();
-                    }}
+                    value={headerFontColor}
+                    onChange={handleHeaderFontColorChange}
                     className="color-picker"
                   />
                 </div>
               </div>
-            </div>
-          ),
-        },
-      ],
-    },
-  ];
+            ),
+          },
+          {
+            key: 'header-backdrop-color',
+            label: (
+              <div className="space-y-1">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center text-sm gap-2 text-gray-300">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 10 10"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M0.371094 2.59407L2.59456 0.370605M5.92976 0.370605L0.371094 5.92927M0.371094 9.26447L9.26496 0.370605M9.26496 3.7058L3.70629 9.26447M9.26496 7.041L7.04149 9.26447"
+                        stroke="#DFDFDF"
+                        strokeWidth="0.741155"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span className="text-xs">Backdrop Color</span>
+                    <Input
+                      type="color"
+                      value={headerBackgroundColor}
+                      onChange={handleHeaderBackgroundColorChange}
+                      className="color-picker"
+                    />
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+        ],
+      },
+    ],
+    [
+      pageMenuItems,
+      handleOpenAddModal,
+      headerDisplayName,
+      headerFontColor,
+      headerBackgroundColor,
+      handleHeaderDisplayNameChange,
+      handleHeaderFontColorChange,
+      handleHeaderBackgroundColorChange,
+    ]
+  );
+
+  // Memoized menu items for main navigation
+  const menuItems = useMemo(
+    () => [
+      {
+        key: 'website-design',
+        label: <span className="font-semibold">Website Design</span>,
+        children: websiteDesignItems,
+      },
+    ],
+    [websiteDesignItems]
+  );
 
   return (
     <aside className="bg-[#181818] text-white w-64 flex flex-col justify-between py-6 px-4">
@@ -360,13 +473,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
               theme="dark"
               defaultOpenKeys={['website-design', 'pages', 'header-menu']}
               selectedKeys={pageId ? [pageId] : []}
-              items={[
-                {
-                  key: 'website-design',
-                  label: <span className="font-semibold">Website Design</span>,
-                  children: websiteDesignItems,
-                },
-              ]}
+              items={menuItems}
               style={{ background: 'transparent', color: 'white' }}
             />
           </div>
@@ -376,7 +483,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           title="Create a New Page"
           open={addModalOpen}
           onOk={handleAddPage}
-          onCancel={() => setAddModalOpen(false)}
+          onCancel={handleCloseAddModal}
           okText="Add"
           confirmLoading={loading}
           okButtonProps={{
@@ -387,7 +494,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           <Input
             placeholder="Set a name"
             value={newPageName}
-            onChange={e => setNewPageName(e.target.value)}
+            onChange={handleNewPageNameChange}
             onPressEnter={handleAddPage}
           />
         </Modal>
@@ -396,7 +503,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           title="Delete Page"
           open={deleteModalOpen}
           onOk={confirmDeletePage}
-          onCancel={() => setDeleteModalOpen(false)}
+          onCancel={handleCloseDeleteModal}
           okText="Delete"
           okButtonProps={{
             style: { background: '#181818', color: '#fff', border: 'none' },
@@ -410,7 +517,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           title="Rename Page"
           open={renameModalOpen}
           onOk={handleRenamePage}
-          onCancel={() => setRenameModalOpen(false)}
+          onCancel={handleCloseRenameModal}
           okText="Rename"
           confirmLoading={loading}
           okButtonProps={{
@@ -420,7 +527,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           <Input
             placeholder="New page name"
             value={renamePageName}
-            onChange={e => setRenamePageName(e.target.value)}
+            onChange={handleRenamePageNameChange}
             onPressEnter={handleRenamePage}
           />
         </Modal>
