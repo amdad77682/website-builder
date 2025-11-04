@@ -13,22 +13,32 @@ const Header: React.FC<HeaderProps> = () => {
   return (
     <div
       className="flex items-center justify-between px-8 py-4 border-b border-gray-200"
-      style={{ color: headerFontColor, background: headerBackgroundColor }}
+      style={{ background: headerBackgroundColor }}
     >
       <div className="flex items-center gap-4">
-        <span className="font-semibold text-lg">
+        <span
+          style={{ color: headerFontColor }}
+          className="font-semibold text-lg"
+        >
           {headerDisplayName || 'Name'}
         </span>
       </div>
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
           {(Array.isArray(pages) ? pages : []).map((p: any) => (
-            <span key={p.id} className="whitespace-nowrap font-medium">
+            <span
+              style={{ color: headerFontColor }}
+              key={p.id}
+              className="whitespace-nowrap font-medium"
+            >
               {p.title}
             </span>
           ))}
         </div>
-        <button className="border border-current rounded-full px-4 py-1 flex items-center gap-2">
+        <button
+          style={{ color: headerFontColor }}
+          className="border border-current rounded-full px-4 py-1 flex items-center gap-2"
+        >
           Contact
         </button>
       </div>

@@ -26,7 +26,7 @@ const SplitView: React.FC<SplitViewProps> = ({
   };
   useEffect(() => {
     if (content) {
-      setSelectedImages(content?.mediaIds);
+      setSelectedImages(content?.mediaIds || []);
     }
   }, [content]);
 

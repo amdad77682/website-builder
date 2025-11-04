@@ -18,7 +18,7 @@ const Gallery: React.FC<GalleryProps> = ({ content, handleUpdateBlock }) => {
   };
   useEffect(() => {
     if (content) {
-      setSelectedImages(content?.mediaIds);
+      setSelectedImages(content?.mediaIds || []);
     }
   }, [content]);
 

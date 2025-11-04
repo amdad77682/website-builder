@@ -16,16 +16,16 @@ interface HeaderStyleState {
 
 export const useHeaderStore = create<HeaderStyleState>(set => ({
   headerDisplayName: '',
-  headerFontColor: '#000000',
-  headerBackgroundColor:  '#FFFFFF',
+  headerFontColor: '',
+  headerBackgroundColor:  '',
   setHeaderDisplayName: name => set({ headerDisplayName: name }),
   setHeaderFontColor: color => set({ headerFontColor: color }),
   setHeaderBackgroundColor: color => set({ headerBackgroundColor: color }),
   setHeaderFromAPI: data =>
     set({
       headerDisplayName: data.displayed_name || '',
-      headerFontColor: data.font_color ||'#000000' ,
-      headerBackgroundColor: data.backdrop_color || '#FFFFFF',
+      headerFontColor: data.font_color ||'' ,
+      headerBackgroundColor: data.backdrop_color || '',
     }),
 }));
 

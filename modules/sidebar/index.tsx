@@ -71,6 +71,8 @@ const Sidebar: React.FC<SidebarProps> = () => {
       setHeaderItems(swrHeaders);
       if (swrHeaders.length > 0) {
         const h = swrHeaders[0];
+        console.log(h);
+
         setHeaderFromAPI(h);
         storeSetHeaderDisplayName(h.displayed_name || '');
         setHeaderDisplayName(h.displayed_name || '');
