@@ -4,11 +4,11 @@ import { NextResponse } from 'next/server';
 // GET /api/page-blocks/[id] - Get a single block by ID
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } =await params;
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json(
@@ -37,11 +37,11 @@ export async function GET(
 // PUT /api/page-blocks/[id] - Update a block by ID (full replacement)
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } =await params;
+  const { id } = await params;
   const body = await request.json();
   const { page_id, type, config, order_index } = body; // All fields expected for PUT
 
@@ -81,11 +81,11 @@ export async function PUT(
 // PATCH /api/page-blocks/[id] - Update a block by ID (partial update)
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } =await params;
+  const { id } = await params;
   const body = await request.json(); // Body can contain partial data
 
   if (!id) {
@@ -117,7 +117,7 @@ export async function PATCH(
 // DELETE /api/page-blocks/[id] - Delete a block by ID
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 // GET /api/header-menus/[id] - Get a single header menu by ID
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
@@ -40,7 +40,7 @@ export async function GET(
 // PUT /api/header-menus/[id] - Update a header menu by ID (full replacement)
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
@@ -89,7 +89,7 @@ export async function PUT(
 // PATCH /api/header-menus/[id] - Update a header menu by ID (partial update)
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
@@ -131,11 +131,11 @@ export async function PATCH(
 // DELETE /api/header-menus/[id] - Delete a header menu by ID
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createSupabaseServiceRoleClient();
 
-  const { id } = params;
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json(
